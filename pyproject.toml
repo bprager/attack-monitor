@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "attack-monitor"
+version = "0.1.0"
+description = ""
+authors = ["Bernd Prager <bernd@prager.ws>"]
+readme = "README.md"
+packages = [{include = "attack_monitor"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+blessed = "^1.19.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = {version = "^23.1a1", allow-prereleases = true}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
