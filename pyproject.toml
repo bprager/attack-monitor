@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "attack-monitor"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Bernd Prager <bernd@prager.ws>"]
 readme = "README.md"
@@ -9,6 +9,7 @@ packages = [{include = "attack_monitor"}]
 [tool.poetry.dependencies]
 python = "^3.8"
 blessed = "^1.19.1"
+geoip2 = "^4.6.0"
 
 
 [tool.poetry.group.dev.dependencies]

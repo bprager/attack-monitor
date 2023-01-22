@@ -8,10 +8,7 @@ from datetime import datetime
 from .run import _run
 from .mode import Mode
 
-FORMAT = "%(asctime)s - %(levelname)s: %(message)s"
-logging.basicConfig(format=FORMAT, filename="attack_monitor.log", level=logging.DEBUG)
-
-DATABASE = "./attack.db"
+DATABASE = "../attack.db"
 REFRESH = 3
 
 locale.setlocale(locale.LC_ALL, "")
@@ -42,6 +39,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.debug("hi")
     main()
-    logging.debug("bye")
