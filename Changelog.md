@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
-- Screen layout
+- Parse auth.log
+- Change to Curses to get rid of flicker
 
 ## [0.1.0] - 2022-12-29
 
@@ -16,3 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - initial version
 - Changelog
+
+
+## [0.2.0] - 2023-01-15
+
+- Full working version
+

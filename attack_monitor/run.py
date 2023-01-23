@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-from blessed import Terminal
-import logging
-import sqlite3
-from enum import Enum
 import locale
-from datetime import datetime
-from blessed import Terminal
-import os
+import logging
+import re
+import sqlite3
 import subprocess
+from datetime import datetime
+
 import geoip2.database
+from blessed import Terminal
 
 from .mode import Mode
 
@@ -38,8 +37,8 @@ def location(ip: str) -> str:
     city = ""
     with geoip2.database.Reader(GEO_DB) as reader:
         response = reader.city(ip)
-        country = response.country.name
-        city = response.city.name
+        country = "Unknow" if response.country.name == None else response.country.name
+        city = "Unknown" if response.city.name == None else response.city.name
     return f"{city} ({country})"
 
 
@@ -58,9 +57,9 @@ def _run(self) -> None:
                 # logging.debug(f"all: {all},last: {last}")
             # Get blocked IP addresses
             output = subprocess.getoutput("sudo ipset save -o plain")
-            start = output.split("\n").index("Members:")
-            blocked = []
-            blocked = blocked[start:]
+            blocked = re.findall(r"[\w:.]+", output)
+            start = blocked.index("Members:")
+            blocked = blocked[start + 1 :]
             log.debug(f"blocked: {blocked}")
             # summary
             print(
@@ -72,9 +71,15 @@ def _run(self) -> None:
             print(f"{FG2}Last: {FG1}{last:%a, %b %d %H:%M:%S}")
             # header
             steps = int(t.width / 6)
-            print(t.move_xy(0, 3) + IN1 + t.clear_eol + "IP", end="")
+            print(t.move_xy(0, 3) + IN1 + t.clear_eol + "IP".rjust(steps - 2), end="")
             print(t.move_xy(steps, 3) + IN1 + t.clear_eol + "Location", end="")
-            print(t.move_xy(2 * steps, 3) + IN1 + t.clear_eol + "Blocked", end="")
+            print(
+                t.move_xy(2 * steps, 3)
+                + IN1
+                + t.clear_eol
+                + "Blocked".rjust(steps - 2),
+                end="",
+            )
             print(t.move_xy(3 * steps, 3) + IN1 + t.clear_eol + "Last", end="")
             print(t.move_xy(4 * steps, 3) + IN1 + t.clear_eol + "Avg (/hour)", end="")
             print(t.move_xy(5 * steps, 3) + IN1 + t.clear_eol + "Num", end="")
@@ -94,20 +99,31 @@ def _run(self) -> None:
                     cur.execute(
                         f"SELECT ip, last, avg, numbers FROM attacks WHERE avg IS NOT NULL AND avg > 0 ORDER BY {sort_by} DESC NULLS FIRST LIMIT {num_rows}"
                     )
+                lines = []
                 for row in cur.fetchall():
+                    line = {}
                     ip, tstamp, avg, num = row
-                    avg = (1 / avg) * 3600
+                    line["ip"] = f"{ip:>15}".rjust(steps - 2)
+                    line["location"] = location(ip)
+                    line["blocked"] = "X" if ip in blocked else " "
+                    line["blocked"] = line["blocked"].rjust(steps - 2)
                     last = datetime.fromtimestamp(tstamp)
+                    line["last"] = f"{last:%b %d %H:%M:%S}"
+                    avg = (1 / avg) * 3600
+                    line["avg"] = f"{avg:>10,.0f}"
+                    line["num"] = f"{num:>10,}"
+                    lines.append(line)
+                print(t.move_xy(0, 4) + t.clear_eol, end="")
+                for l in lines:
+                    print(t.move_x(0) + l["ip"], end="")
+                    print(t.move_x(2 * steps) + l["blocked"], end="")
+                    print(t.move_x(steps) + l["location"], end="")
+                    print(t.move_x(3 * steps) + l["last"], end="")
+                    print(t.move_x(4 * steps) + l["avg"], end="")
+                    print(t.move_x(5 * steps) + l["num"], end="")
                     print(t.move_down(1) + t.clear_eol, end="")
-                    print(t.move_x(0) + f"{ip:>15}", end="")
-                    print(t.move_x(steps) + location(ip), end="")
-                    if ip in blocked:
-                        print(t.move_x(2 * steps) + "X", end="")
-                    print(t.move_x(3 * steps) + f"{last:%b %d %H:%M:%S}", end="")
-                    print(t.move_x(4 * steps) + f"{avg:>10,.0f}", end="")
-                    print(t.move_x(5 * steps) + f"{num:>10,}", end="")
             # footer
-            print(t.move_xy(0, t.height - 1) + IN1 + t.clear_eol, end="")
+            print(t.move_xy(0, t.height - 2) + IN1 + t.clear_eol, end="")
             print(
                 t.black_on_bright_cyan(
                     "q: Quit, t: Sort by time, f: Sort by frequency, n: Sort by Numbers"

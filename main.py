@@ -2,7 +2,7 @@
 import attack_monitor as monitor
 
 DATABASE = "./attack.db"
-REFRESH = 3
+REFRESH = 20
 
 
 def main():
