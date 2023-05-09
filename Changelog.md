@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
-- Parse auth.log
 - Change to Curses to get rid of flicker
+- Catch "geoip2.errors.AddressNotFoundError: The address xx.xx.xx.xx is not in the database."
+- Show "attack since"
+- Add debug option
+- Make client more flexible
+- Bash completion
 
 ## [0.1.0] - 2022-12-29
 
@@ -18,8 +22,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - initial version
 - Changelog
 
-
 ## [0.2.0] - 2023-01-15
+
+### Changed
 
 - Full working version
 
+## [0.3.0] - 2023-01-20
+
+### Added
+
+- "auth.log" parsed
+
+## [0.4.0] - 2023-01-26
+
+### Changed
+
+- Optimizing deletion to eol
+
+## [0.5.0] - 2023-01-26
+
+### Fixed
+
+- Log date parsing format for new Ubuntu distribution 23.x (_jummy_)

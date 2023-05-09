@@ -10,8 +10,17 @@ from .mode import Mode
 
 DATABASE = "../attack.db"
 REFRESH = 3
+FORMAT = "%(asctime)s - %(name)s, %(levelname)s: %(message)s"
 
 locale.setlocale(locale.LC_ALL, "")
+
+# create logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+# create file handler and set level to debug
+fh = logging.FileHandler("attack_monitor.log")
+fh.setFormatter(logging.Formatter(FORMAT))
+log.addHandler(fh)
 
 
 class AttackMonitor:
@@ -21,15 +30,19 @@ class AttackMonitor:
     mode: Mode
 
     def __init__(self, db: str, refresh: int) -> None:
+        log.debug("in __init__")
         self.refresh = refresh
+        log.debug(f"refresh is {refresh}")
         self.db_string = db
         self.term = Terminal()
+        # sorting method
         self.mode = Mode.TIME
 
     def __del__(self) -> None:
         pass
 
     def run(self):
+        log.debug("in run")
         _run(self)
 
 

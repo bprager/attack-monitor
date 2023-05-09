@@ -19,11 +19,12 @@ import socket
 import sqlite3
 import sys
 import time
+import re
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 
 # setup logging
-FORMATTER = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(message)s")
+FORMATTER = logging.Formatter("%(asctime)s — %(name)s, %(line)s — %(levelname)s: %(message)s")
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(FORMATTER)
@@ -90,10 +91,14 @@ def getTimeAndIPfromKernLog(line: str) -> tuple:
 
 
 def getTimeAndIPfromAuthLog(line: str) -> tuple:
+    # /var/log/auth.log.1:2023-05-06T23:59:11.275094-07:00 fenrir sshd[550336]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=103.85.23.10
+    # /var/log/auth.log.1:2023-05-06T23:59:13.354432-07:00 fenrir sshd[550336]: Failed password for invalid user kafka from 103.85.23.10 port 41800 ssh2
     hostname = socket.gethostname()
     timestring = line.split(hostname)[0].strip()
-    # log.debug(f"line: {line}")
-    ip = line.split("rhost=")[1].split()[0]
+    log.debug(f"line: {line}")
+    # Extract IPv4 from a string
+    ipv4_extract_pattern = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+    ip = re.findall(ipv4_extract_pattern, line)[0]
     return timestring, ip
 
 
@@ -102,11 +107,8 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
     # convert timestring to timestamp
     now = local.localize(datetime.datetime.utcnow())
     year = now.year
-    log_date = local.localize(
-        datetime.datetime.strptime(timestring, "%b %d %H:%M:%S").replace(year=year)
-    )
-    if log_date.date() > now.date():
-        log_date = log_date.replace(year=year - 1)
+    # log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z") if ":" == timestring[-3] else datetime.datetime.strptime(timestring, "%b %d %H:%M:%S").replace(year=year)
+    log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z")
     timestamp = calendar.timegm(log_date.utctimetuple())
 
     # Check if IP already exist
@@ -149,7 +151,7 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
             )
             row = res.fetchone()[0]
             con.execute(
-                """UPDATE attacks SET ip=?, "last"=?, avg=?, numbers=? WHERE id=?)""",
+                """UPDATE attacks SET ip=?, "last"=?, avg=?, numbers=? WHERE id=?""",
                 (ip, timestamp, None, 1, row),
             )
             con.commit()
@@ -165,13 +167,14 @@ def main():
     con = sqlite3.connect(f"file:{DB_FILE}?mode=rw")
     with con:
         for l in follow(AUTH_LOG_FILE):
-            if "pam_unix(sshd:auth): authentication failure" in l:
+            if "pam_unix(sshd:auth): authentication failure" in l or "Failed password for invalid user" in l:
                 time, ip = getTimeAndIPfromAuthLog(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
                 log.debug(f"from auth.log, time: {time}, ip: {ip}")
                 persist(con, time, ip)
+                # "Failed password for invalid user"
         for l in follow(KERN_LOG_FILE):
             if "iptables deny" in l:
                 time, ip = getTimeAndIPfromKernLog(l)
