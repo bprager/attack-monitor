@@ -4,7 +4,7 @@ This script reads a kern.log lease file and persists the recen 1000 iptables den
 It assumes that the records are not older than 12 months
 """
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"
 __author__ = "Bernd Prager"
 
 
@@ -41,7 +41,7 @@ AUTH_LOG_FILE = "/var/log/auth.log"
 DB_FILE = "/home/bernd/attack.db"
 
 LOCAL = ["192.168"]
-MAX = 1000
+MAX = 1000000
 
 
 def handler(signum, frame):

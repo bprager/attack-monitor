@@ -4,7 +4,7 @@ import logging
 
 DATABASE = "./attack.db"
 REFRESH = 2
-FORMAT = "%(asctime)s - %(funcname)s, %(line)s, %(levelname)s: %(message)s"
+FORMAT = "%(asctime)s - %(funcName)s, %(line)s, %(levelname)s: %(message)s"
 
 # create logger
 log = logging.getLogger(__name__)

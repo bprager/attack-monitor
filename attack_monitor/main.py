@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from blessed import Terminal
 import logging
-import sqlite3
 import locale
 from datetime import datetime
 

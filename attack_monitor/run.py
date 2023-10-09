@@ -67,9 +67,10 @@ def _run(self) -> None:
             with sqlite3.connect(self.db_string) as con:
                 cur = con.cursor()
                 # cur.execute("SELECT 1,SQLITE_VERSION()")
-                cur.execute("SELECT sum(numbers), max(last) FROM attacks")
-                all, tstamp = cur.fetchone()
-                last = datetime.fromtimestamp(tstamp)
+                cur.execute("SELECT sum(numbers), max(last), min(last) FROM attacks")
+                all, tstamp1, tstamp2 = cur.fetchone()
+                last = datetime.fromtimestamp(tstamp1)
+                first = datetime.fromtimestamp(tstamp2)
                 # logging.debug(f"all: {all},last: {last}")
             # Get blocked IP addresses
             if os.geteuid() != 0:
@@ -89,7 +90,7 @@ def _run(self) -> None:
             print(t.home + t.move_xy(2, 1), end="")
             print(f"{FG2}Absolute numbers: {FG1}{all:,}" + t.clear_eol, end="")
             print(t.move_xy(2, 2), end="")
-            print(f"{FG2}Last: {FG1}{last:%a, %b %d %H:%M:%S}" + t.clear_eol, end="")
+            print(f"{FG2}Last: {FG1}{last:%a, %b %d %H:%M:%S} , {FG2}since: {FG1}{first:%a, %b %d}" + t.clear_eol, end="")
             # header
             log.debug(f"terminal width is: {t.width}")
             steps = int(t.width / 6)
