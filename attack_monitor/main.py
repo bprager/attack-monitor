@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 from blessed import Terminal
-import logging
-import sqlite3
 import locale
-from datetime import datetime
 
 from .run import _run
 from .mode import Mode
@@ -25,9 +22,6 @@ class AttackMonitor:
         self.db_string = db
         self.term = Terminal()
         self.mode = Mode.TIME
-
-    def __del__(self) -> None:
-        pass
 
     def run(self):
         _run(self)

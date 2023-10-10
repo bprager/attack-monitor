@@ -1,5 +1,6 @@
 # database
 *.db
+*.sqlite3
 # log files
 *.log
 
@@ -46,3 +47,6 @@ pip-delete-this-directory.txt
 #poetry.lock
 
 .vscode/
+
+# virtual environment
+.venv/

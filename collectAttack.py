@@ -4,7 +4,7 @@ This script reads a kern.log lease file and persists the recen 1000 iptables den
 It assumes that the records are not older than 12 months
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Bernd Prager"
 
 
@@ -81,7 +81,7 @@ def follow(name: str) -> str:
         time.sleep(1)
 
 
-def getTimeAndIPfromKernLog(line: str) -> tuple:
+def get_time_and_ip_from_kern_log(line: str) -> tuple:
     hostname = socket.gethostname()
     timestring = line.split(hostname)[0].strip()
     # log.debug(f"line: {line}")
@@ -89,7 +89,7 @@ def getTimeAndIPfromKernLog(line: str) -> tuple:
     return timestring, ip
 
 
-def getTimeAndIPfromAuthLog(line: str) -> tuple:
+def get_time_and_ip_from_auth_log(line: str) -> tuple:
     hostname = socket.gethostname()
     timestring = line.split(hostname)[0].strip()
     # log.debug(f"line: {line}")
@@ -149,8 +149,8 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
             )
             row = res.fetchone()[0]
             con.execute(
-                """UPDATE attacks SET ip=?, "last"=?, avg=?, numbers=? WHERE id=?)""",
-                (ip, timestamp, None, 1, row),
+                """UPDATE attacks SET ip=?, "last"=?, "first"=?, avg=?, numbers=? WHERE id=?)""",
+                (ip, timestamp, timestamp, None, 1, row),
             )
             con.commit()
         else:
@@ -166,7 +166,7 @@ def main():
     with con:
         for l in follow(AUTH_LOG_FILE):
             if "pam_unix(sshd:auth): authentication failure" in l:
-                time, ip = getTimeAndIPfromAuthLog(l)
+                time, ip = get_time_and_ip_from_auth_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
@@ -174,7 +174,7 @@ def main():
                 persist(con, time, ip)
         for l in follow(KERN_LOG_FILE):
             if "iptables deny" in l:
-                time, ip = getTimeAndIPfromKernLog(l)
+                time, ip = get_time_and_ip_from_kern_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
