@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 """
 This script reads a kern.log lease file and persists the recen 1000 iptables deny records
 It assumes that the records are not older than 12 months
 """
 
-__version__ = "0.5.0"
+__version__ = "0.4.1"
 __author__ = "Bernd Prager"
 
 
@@ -19,12 +18,12 @@ import socket
 import sqlite3
 import sys
 import time
-import re
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 
 # setup logging
-FORMATTER = logging.Formatter("%(asctime)s — %(name)s, %(line)s — %(levelname)s: %(message)s")
+format="%(asctime)s.%(msecs)03d %(levelname)s %(name)s - %(funcName)s:%(lineno)d: %(message)s"
+FORMATTER = logging.Formatter(format)
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(FORMATTER)
@@ -41,7 +40,7 @@ AUTH_LOG_FILE = "/var/log/auth.log"
 DB_FILE = "/home/bernd/attack.db"
 
 LOCAL = ["192.168"]
-MAX = 1000000
+MAX = 1000
 
 
 def handler(signum, frame):
@@ -82,23 +81,19 @@ def follow(name: str) -> str:
         time.sleep(1)
 
 
-def getTimeAndIPfromKernLog(line: str) -> tuple:
+def get_time_and_ip_from_kern_log(line: str) -> tuple:
     hostname = socket.gethostname()
-    timestring = line.split(hostname)[0].strip()
-    # log.debug(f"line: {line}")
+    timestring = line.split()[0].strip()
+    log.debug(f"line: {line}")
     ip = line.split("SRC=")[1].split()[0]
     return timestring, ip
 
 
-def getTimeAndIPfromAuthLog(line: str) -> tuple:
-    # /var/log/auth.log.1:2023-05-06T23:59:11.275094-07:00 fenrir sshd[550336]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=103.85.23.10
-    # /var/log/auth.log.1:2023-05-06T23:59:13.354432-07:00 fenrir sshd[550336]: Failed password for invalid user kafka from 103.85.23.10 port 41800 ssh2
+def get_time_and_ip_from_auth_log(line: str) -> tuple:
     hostname = socket.gethostname()
-    timestring = line.split(hostname)[0].strip()
+    timestring = line.split()[0].strip()
     log.debug(f"line: {line}")
-    # Extract IPv4 from a string
-    ipv4_extract_pattern = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
-    ip = re.findall(ipv4_extract_pattern, line)[0]
+    ip = line.split("rhost=")[1].split()[0]
     return timestring, ip
 
 
@@ -107,8 +102,9 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
     # convert timestring to timestamp
     now = local.localize(datetime.datetime.utcnow())
     year = now.year
-    # log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z") if ":" == timestring[-3] else datetime.datetime.strptime(timestring, "%b %d %H:%M:%S").replace(year=year)
-    log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z")
+    log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z").replace(year=year)
+    if log_date.date() > now.date():
+        log_date = log_date.replace(year=year - 1)
     timestamp = calendar.timegm(log_date.utctimetuple())
 
     # Check if IP already exist
@@ -116,9 +112,9 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
     ips = [row[0] for row in rows]
     if ip in ips:
         # Update
-        log.debug(f"update record for ip {ip}")
+        log.debug(f"update record for ip {ip} on {timestring}")
         res = con.execute(
-            """SELECT "last", avg, numbers FROM attacks WHERE ip = ?""", (ip,)
+            """SELECT "last", avg, numbers FROM attacks WHERE ip=? """, (ip,)
         )
         last, avg, numbers = res.fetchone()
         numbers = numbers + 1
@@ -138,7 +134,7 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
         con.commit()
     else:
         # Create new record
-        log.debug(f"create new record for ip: {ip} and timestamp: {timestamp}")
+        log.debug(f"create new record for ip: {ip} on {timestring}")
         # Check if max entries
         res = con.execute("""SELECT max(id) FROM attacks""")
         row = res.fetchone()[0]
@@ -150,34 +146,41 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
                 """SELECT id FROM attacks WHERE last = (SELECT min(last) FROM attacks)"""
             )
             row = res.fetchone()[0]
-            con.execute(
-                """UPDATE attacks SET ip=?, "last"=?, avg=?, numbers=? WHERE id=?""",
-                (ip, timestamp, None, 1, row),
-            )
-            con.commit()
+            try:
+                log.debug(f"""UPDATE attacks SET ip="{ip}", "last"={timestamp}, avg=NULL, numbers=1 WHERE id={row}""")
+                con.execute(
+                    """UPDATE attacks SET ip=?, "last"=?, avg=NULL, numbers=? WHERE id=?""",
+                    (ip, timestamp, 1, row),
+                )
+                con.commit()
+            except sqlite3.OperationalError as e:
+                log.error(f"SQL error: {e}")
         else:
-            con.execute(
-                """INSERT INTO attacks (ip, last, numbers) VALUES (?, ?, ?)""",
-                (ip, timestamp, 1),
-            )
-            con.commit()
+            try:
+                log.debug(f"""INSERT INTO attacks (ip, first, last, numbers) VALUES ("{ip}", {timestamp}, {timestamp}, 1)""")
+                con.execute(
+                    """INSERT INTO attacks (ip, first, last, numbers) VALUES (?, ?, ?, ?)""",
+                    (ip, timestamp, timestamp, 1),
+                )
+                con.commit()
+            except sqlite3.OperationalError as e:
+                log.error(f"SQL error: {e}")
 
 
 def main():
     con = sqlite3.connect(f"file:{DB_FILE}?mode=rw")
     with con:
         for l in follow(AUTH_LOG_FILE):
-            if "pam_unix(sshd:auth): authentication failure" in l or "Failed password for invalid user" in l:
-                time, ip = getTimeAndIPfromAuthLog(l)
+            if "pam_unix(sshd:auth): authentication failure" in l:
+                time, ip = get_time_and_ip_from_auth_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
                 log.debug(f"from auth.log, time: {time}, ip: {ip}")
                 persist(con, time, ip)
-                # "Failed password for invalid user"
         for l in follow(KERN_LOG_FILE):
             if "iptables deny" in l:
-                time, ip = getTimeAndIPfromKernLog(l)
+                time, ip = get_time_and_ip_from_kern_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
