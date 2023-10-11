@@ -1,35 +1,54 @@
 #!/usr/bin/env python3
-from blessed import Terminal
 import locale
+import datetime
 
-from .run import _run
 from .mode import Mode
 
 DATABASE = "../attack.db"
-REFRESH = 3
 
 locale.setlocale(locale.LC_ALL, "")
 
 
-class AttackMonitor:
-    term: Terminal
+class Record:
+    ip: str
+    location: str
+    blocked: bool
+    last: datetime.datetime
+    avg: float
+    num: int
+
+
+class Data:
+    total: int
+    since: datetime.datetime
+    last: datetime.datetime
+    reords: list[Record]
+
+
+class Source:
     db_string: str
     refresh: int
     mode: Mode
+    data: Data
 
-    def __init__(self, db: str, refresh: int) -> None:
-        self.refresh = refresh
+    def __init__(self, db: str) -> None:
+        print(1)
         self.db_string = db
-        self.term = Terminal()
+        print(2)
         self.mode = Mode.TIME
+        print(3)
+        self.data = Data()
 
-    def run(self):
-        _run(self)
+    def get(self, mode: Mode) -> Data:
+        self.mode = mode
+        self.data.total = 0
+        return self.data
 
 
 def main():
-    am = AttackMonitor(DATABASE, REFRESH)
-    am.run()
+    source = Source(DATABASE)
+    mode = Mode.TIME
+    source.get(mode)
 
 
 if __name__ == "__main__":

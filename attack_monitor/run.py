@@ -7,7 +7,6 @@ import subprocess
 from datetime import datetime
 
 import geoip2.database
-from blessed import Terminal
 
 from .mode import Mode
 
@@ -26,10 +25,10 @@ fh.setFormatter(logging.Formatter(FORMAT))
 log.addHandler(fh)
 
 # Colors
-term = Terminal()
-FG1 = term.orangered
-FG2 = term.bright_cyan
-IN1 = term.black_on_bright_cyan
+term = None
+# FG1 = term.orangered
+# FG2 = term.bright_cyan
+# IN1 = term.black_on_bright_cyan
 
 
 def location(ip: str) -> str:
