@@ -3,7 +3,6 @@ import attack_monitor as monitor
 import curses
 import logging
 import os
-import time
 from curses import wrapper
 from enum import Enum
 
@@ -16,7 +15,7 @@ class Theme(Enum):
 
 
 DATABASE = "./attack.db"
-REFRESH = 5
+REFRESH = 5000
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 logging.basicConfig(
@@ -129,7 +128,6 @@ def main(stdscr):
                 mode = monitor.Mode.FREQ
             case "q" | "Q":
                 break
-        time.sleep(REFRESH)
 
 
 wrapper(main)

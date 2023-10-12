@@ -112,8 +112,10 @@ class Source:
         blocked = re.findall(r"[\w:.]+", output)
         if "Members:" in blocked:
             start = blocked.index("Members:")
-        blocked = blocked[start + 1 :]
-        loggging.debug(f"blocked: {blocked}")
+            blocked = blocked[start + 1 :]
+        else:
+            blocked = []
+        logging.debug(f"blocked: {blocked}")
         with sqlite3.connect(database=self.db_string) as con:
             cur = con.cursor()
             # stats
