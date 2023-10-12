@@ -28,8 +28,9 @@ def draw_screen(screen, data, rows, cols):
     curses.curs_set(0)  # Hide cursor
     screen.attron(curses.color_pair(3))
     # header
-    screen.chgat(0, 0, -1, curses.color_pair(3))
     screen.move(0, 0)
+    screen.clrtoeol()
+    screen.chgat(0, 0, -1, curses.color_pair(3))
     steps: int = int(cols / 3)
     screen.addstr("Total attacks: ")
     screen.addstr(f"{data.total:,}", curses.color_pair(2))
@@ -41,8 +42,9 @@ def draw_screen(screen, data, rows, cols):
     screen.addstr(f"{data.first:%a, %b %d %H:%M:%S}", curses.color_pair(2))
     steps = int(cols / 6)
     screen.move(1, 0)
-    screen.attron(curses.color_pair(4))
+    screen.clrtoeol()
     screen.chgat(1, 0, -1, curses.color_pair(4))
+    screen.attron(curses.color_pair(4))
     screen.addstr("IP".rjust(steps - 2))
     screen.move(1, 1 * steps)
     screen.addstr("Location")
@@ -57,8 +59,9 @@ def draw_screen(screen, data, rows, cols):
     screen.attroff(curses.color_pair(1))
     # footer
     screen.move(rows - 1, 0)
-    screen.attron(curses.color_pair(4))
+    screen.clrtoeol()
     screen.chgat(rows - 1, 0, -1, curses.color_pair(4))
+    screen.attron(curses.color_pair(4))
     screen.addstr("Q: Quit, T: Sort by time, F: Sort by frequency, N: Sort by Numbers")
     screen.refresh()
 
