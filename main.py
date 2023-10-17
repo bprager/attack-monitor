@@ -36,12 +36,14 @@ def header(screen, data, cols):
     screen.move(0, 1 * steps)
     screen.addstr("Last: ")
     screen.addstr(
-        f"{data.last:%a, %b %d %H:%M:%S}", curses.color_pair(Theme.RED_ON_BLACK.value)
+        f"{data.last:%a, %b %d %Y %H:%M:%S}",
+        curses.color_pair(Theme.RED_ON_BLACK.value),
     )
     screen.move(0, 2 * steps)
     screen.addstr("Since: ")
     screen.addstr(
-        f"{data.last:%a, %b %d %H:%M:%S}", curses.color_pair(Theme.RED_ON_BLACK.value)
+        f"{data.first:%a, %b %d %Y %H:%M:%S}",
+        curses.color_pair(Theme.RED_ON_BLACK.value),
     )
     steps = int(cols / 6)
     screen.move(1, 0)
@@ -81,7 +83,7 @@ def panel(screen, data, rows, cols):
         screen.clrtoeol()
         screen.addstr(f"{record.ip:>15}".rjust(steps - 2), curses.color_pair(1))
         screen.move(y, 2 * steps)
-        screen.addstr("🛇".rjust(steps - 5) if record.blocked else " ")
+        screen.addstr("🚫".rjust(steps - 5) if record.blocked else " ")
         screen.move(y, 1 * steps)
         screen.addstr(record.location)
         screen.move(y, 3 * steps)
