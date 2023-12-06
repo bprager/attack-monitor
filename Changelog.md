@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
+- Pagination
+
 ## [0.1.0] - Thu Dec 29 11:25:04 PDT 2022
 
 ### Added
