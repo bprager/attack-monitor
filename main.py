@@ -68,7 +68,10 @@ def footer(screen, rows):
     screen.clrtoeol()
     screen.chgat(rows - 1, 0, -1, curses.color_pair(Theme.BLACK_ON_CYAN.value))
     screen.attron(curses.color_pair(4))
-    screen.addstr("Q: Quit, T: Sort by time, F: Sort by frequency, N: Sort by Numbers")
+    try:
+        screen.addstr("Q: Quit, T: Sort by time, F: Sort by frequency, N: Sort by Numbers")
+    except curses.error:
+        pass
 
 
 def panel(screen, data, rows, cols):
