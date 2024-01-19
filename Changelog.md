@@ -36,3 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix broken "No entry" sign
+
+## [0.4.1] - Fri Jan 19 09:47:36 PST 2024
+
+### Fixed
+
+- Exception handling for curses error in footer
