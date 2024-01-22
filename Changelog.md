@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
+- Pagination
+
 ## [0.1.0] - Thu Dec 29 11:25:04 PDT 2022
 
 ### Added
@@ -42,3 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Exception handling for curses error in footer
+
+## [0.4.2] - Fri Jan 19 09:47:36 PST 2024
+
+### Changed
+
+- Add year to date display
+- Right align "Blocked" icon
