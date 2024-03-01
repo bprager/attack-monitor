@@ -51,3 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add year to date display
 - Right align "Blocked" icon
+
+## [0.5.0] - Thu Feb 29 19:06:13 PST 2024
+
+### Added
+
+- Script for CRON to block IP's with attack numbers > 1,000
