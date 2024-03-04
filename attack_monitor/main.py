@@ -25,7 +25,7 @@ logging.basicConfig(
 
 
 def location(ip: str) -> str:
-    country = ""
+    country: str | None = ""
     city = ""
     with geoip2.database.Reader(GEO_DB) as reader:
         try:
