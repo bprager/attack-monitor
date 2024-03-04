@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
-- Pagination
 - Cleanup code
 
 ## [0.1.0] - Thu Dec 29 11:25:04 PDT 2022
@@ -58,3 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Script for CRON to block IP's with attack numbers > 1,000
+
+
+## [0.6.0] - Mon Mar  4 14:44:21 PST 2024
+
+### Added
+
+- Pagination
+
+
