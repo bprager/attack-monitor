@@ -210,7 +210,7 @@ def header(
     )
     screen.move(0, 3 * steps)
     screen.addstr(
-        f"Page {ceil(first_line/rows):,}/{ceil(data.count/rows):,}".rjust(steps)
+        f"Page {ceil(first_line/rows)+1:,}/{ceil(data.count/rows):,}".rjust(steps)
     )
     steps = int(cols / 6)
     screen.move(1, 0)
