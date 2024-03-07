@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## TODO
 
-- Cleanup code
+- Exception handling
 
 ## [0.1.0] - Thu Dec 29 11:25:04 PDT 2022
 
@@ -66,3 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pagination
 
 
+## [0.6.1] - Wed Mar  6 17:20:38 PST 2024
+
+### Changed
+
+- Code cleanup and renaming of `collect_attack.py`

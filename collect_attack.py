@@ -4,7 +4,7 @@ This script reads a kern.log lease file and persists the recen 1000 iptables den
 It assumes that the records are not older than 12 months
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Bernd Prager"
 
 
@@ -12,28 +12,27 @@ import calendar
 import datetime
 import logging
 import os
-import pytz
-import readchar
 import signal
 import socket
 import sqlite3
 import sys
 import time
+from typing import Generator
 
-script_dir = os.path.abspath(os.path.dirname(__file__))
+import pytz
+import readchar
 
-# setup logging
-FORMATTER = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(message)s")
-log = logging.getLogger(__name__)
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(FORMATTER)
-file_handler = logging.FileHandler(script_dir + "/attacks.log")
-file_handler.setFormatter(FORMATTER)
-log.setLevel(logging.INFO)
-# log.setLevel(logging.DEBUG)
-log.addHandler(console_handler)
-log.addHandler(file_handler)
+SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s %(name)s - %(funcName)s:%(lineno)d: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(f"{SCRIPT_DIR}/attacks.log"),
+    ],
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 KERN_LOG_FILE = "/var/log/kern.log"
 AUTH_LOG_FILE = "/var/log/auth.log"
@@ -43,13 +42,14 @@ LOCAL = ["192.168"]
 MAX = 1000
 
 
-def handler(signum, frame):
+def handler(_signum, _frame):
+    """Handle Ctrl-c signal. Ask for confirmation before exit."""
     msg = "Ctrl-c was pressed. Do you really want to exit? y/n "
     print(msg, end="", flush=True)
     res = readchar.readchar()
     if res == "y":
         print("")
-        exit(1)
+        sys.exit(0)
     else:
         print("", end="\r", flush=True)
         print(" " * len(msg), end="", flush=True)  # clear the printed line
@@ -59,8 +59,9 @@ def handler(signum, frame):
 signal.signal(signal.SIGINT, handler)
 
 
-def follow(name: str) -> str:
-    current = open(name, "r")
+def follow(name: str) -> Generator[str, None, None]:
+    """Follow a file and yield new lines."""
+    current = open(name, "r", encoding="utf-8")
     curino = os.fstat(current.fileno()).st_ino
     while True:
         while True:
@@ -71,7 +72,7 @@ def follow(name: str) -> str:
 
         try:
             if os.stat(name).st_ino != curino:
-                new = open(name, "r")
+                new = open(name, "r", encoding="utf-8")
                 current.close()
                 current = new
                 curino = os.fstat(current.fileno()).st_ino
@@ -81,23 +82,26 @@ def follow(name: str) -> str:
         time.sleep(1)
 
 
-def getTimeAndIPfromKernLog(line: str) -> tuple:
+def get_time_and_ip_from_kern_log(line: str) -> tuple:
+    """Extract time and ip from kern.log line."""
     hostname = socket.gethostname()
     timestring = line.split(hostname)[0].strip()
-    # log.debug(f"line: {line}")
+    # logging.debug(f"line: {line}")
     ip = line.split("SRC=")[1].split()[0]
     return timestring, ip
 
 
-def getTimeAndIPfromAuthLog(line: str) -> tuple:
+def get_time_and_ip_from_auth_log(line: str) -> tuple:
+    """Extract time and ip from auth.log line."""
     hostname = socket.gethostname()
     timestring = line.split(hostname)[0].strip()
-    # log.debug(f"line: {line}")
+    # logging.debug(f"line: {line}")
     ip = line.split("rhost=")[1].split()[0]
     return timestring, ip
 
 
 def persist(con: sqlite3.Connection, timestring: str, ip: str):
+    """Persist the record in the database. If the record already exist, update it."""
     local = pytz.timezone("America/Los_Angeles")
     # convert timestring to timestamp
     now = local.localize(datetime.datetime.utcnow())
@@ -114,7 +118,7 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
     ips = [row[0] for row in rows]
     if ip in ips:
         # Update
-        log.debug(f"update record for ip {ip}")
+        logging.debug("update record for ip %s", ip)
         res = con.execute(
             """SELECT "last", avg, numbers FROM attacks WHERE ip = ?""", (ip,)
         )
@@ -123,9 +127,9 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
         delta = timestamp - last
         if delta < 0:
             # already in database, do nothing
-            log.debug("record exist, do nothing")
+            logging.debug("record exist, do nothing")
             return
-        if avg == None:
+        if avg is None:
             avg = delta
         else:
             avg = (avg * (numbers - 1) + delta) / numbers
@@ -136,14 +140,14 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
         con.commit()
     else:
         # Create new record
-        log.debug(f"create new record for ip: {ip} and timestamp: {timestamp}")
+        logging.debug("create new record for ip: %s and timestamp: %s", ip, timestamp)
         # Check if max entries
         res = con.execute("""SELECT max(id) FROM attacks""")
         row = res.fetchone()[0]
-        log.debug(f"current max: {row}")
+        logging.debug("current max: %s", row)
         if row and (row > MAX):
             # Find oldest record and replace
-            log.debug("find oldest record")
+            logging.debug("find oldest record")
             res = con.execute(
                 """SELECT id FROM attacks WHERE last = (SELECT min(last) FROM attacks)"""
             )
@@ -162,24 +166,25 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
 
 
 def main():
+    """Main function"""
     con = sqlite3.connect(f"file:{DB_FILE}?mode=rw")
     with con:
         for l in follow(AUTH_LOG_FILE):
             if "pam_unix(sshd:auth): authentication failure" in l:
-                time, ip = getTimeAndIPfromAuthLog(l)
+                log_time, ip = get_time_and_ip_from_auth_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
-                log.debug(f"from auth.log, time: {time}, ip: {ip}")
-                persist(con, time, ip)
+                logging.debug("from auth.log, time: %s, ip: %s", log_time, ip)
+                persist(con, log_time, ip)
         for l in follow(KERN_LOG_FILE):
             if "iptables deny" in l:
-                time, ip = getTimeAndIPfromKernLog(l)
+                log_time, ip = get_time_and_ip_from_kern_log(l)
                 domain = ".".join(ip.split(".")[:2])
                 if domain in LOCAL:
                     continue
-                log.debug(f"from kern.log, time: {time}, ip: {ip}")
-                persist(con, time, ip)
+                logging.debug("from kern.log, time: %s, ip: %s", log_time, ip)
+                persist(con, log_time, ip)
     con.close()
 
 
