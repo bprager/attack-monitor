@@ -58,16 +58,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Script for CRON to block IP's with attack numbers > 1,000
 
-
 ## [0.6.0] - Mon Mar  4 14:44:21 PST 2024
 
 ### Added
 
 - Pagination
 
-
 ## [0.6.1] - Wed Mar  6 17:20:38 PST 2024
 
 ### Changed
 
 - Code cleanup and renaming of `collect_attack.py`
+
+## [0.6.1] - Fri Mar  8 10:58:01 PST 2024
+
+### Fixed
+
+- Corrected `ipset` command
