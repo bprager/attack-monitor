@@ -34,6 +34,9 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+if "DEBUG" in os.environ:
+    logging.getLogger().setLevel(logging.DEBUG)
+
 KERN_LOG_FILE = "/var/log/kern.log"
 AUTH_LOG_FILE = "/var/log/auth.log"
 DB_FILE = "/home/bernd/attack.db"
@@ -106,9 +109,7 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
     # convert timestring to timestamp
     now = local.localize(datetime.datetime.utcnow())
     year = now.year
-    log_date = local.localize(
-        datetime.datetime.strptime(timestring, "%b %d %H:%M:%S").replace(year=year)
-    )
+    log_date = datetime.datetime.strptime(timestring, "%Y-%m-%dT%H:%M:%S.%f%z").replace(year=year)
     if log_date.date() > now.date():
         log_date = log_date.replace(year=year - 1)
     timestamp = calendar.timegm(log_date.utctimetuple())
@@ -151,12 +152,18 @@ def persist(con: sqlite3.Connection, timestring: str, ip: str):
             res = con.execute(
                 """SELECT id FROM attacks WHERE last = (SELECT min(last) FROM attacks)"""
             )
-            row = res.fetchone()[0]
-            con.execute(
-                """UPDATE attacks SET ip=?, "last"=?, avg=?, numbers=? WHERE id=?)""",
-                (ip, timestamp, None, 1, row),
-            )
-            con.commit()
+            try:
+                row = res.fetchone()[0]
+                logging.debug(
+                    """UPDATE attacks SET ip=%s, "last"=%s, avg=NULL, numbers=%s WHERE id=%s""",
+                    ip, timestamp, 1, row)
+                con.execute(
+                    """UPDATE attacks SET ip=?, "last"=?, avg=NULL, numbers=? WHERE id=?""",
+                    (ip, timestamp, 1, row),
+                )
+                con.commit()
+            except sqlite3.OperationalError as e:
+                logging.error("SQL error: %s", e)
         else:
             con.execute(
                 """INSERT INTO attacks (ip, last, numbers) VALUES (?, ?, ?)""",
