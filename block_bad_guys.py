@@ -4,7 +4,7 @@ This script checks the attack database for actors who tried more than 1,000 time
 and add them to the ip blacklist
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.2"
 __author__ = "Bernd Prager"
 
 import logging
@@ -19,7 +19,10 @@ SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s.%(msecs)03d %(levelname)s %(name)s - %(funcName)s:%(lineno)d: %(message)s",
-    handlers=[ logging.StreamHandler(sys.stdout),logging.FileHandler(f"{SCRIPT_DIR}/blocker.log") ],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(f"{SCRIPT_DIR}/blocker.log"),
+    ],
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
@@ -57,10 +60,14 @@ def main():
         logging.info("added %d IPs to blacklist", added_ips)
         try:
             # save the blacklist
-            subprocess.run(["ipset", "save", "blacklist", "-f", "/etc/ipset.conf"], check=True)
+            subprocess.run(
+                ["ipset", "save", "blacklist", "-f", "/etc/ipset.conf"], check=True
+            )
             # reload the blacklist
-            subprocess.run(["ipset", "restore", "blacklist", "-f", "/etc/ipset.conf"], check=True)
-        except subprocess.CalledProcessError as e: 
+            subprocess.run(
+                ["ipset", "restore", "blacklist", "-f", "/etc/ipset.conf"], check=True
+            )
+        except subprocess.CalledProcessError as e:
             logging.warning("can't persist blacklist, due to %s", e)
     else:
         logging.debug("no IPs added to blacklist")

@@ -75,3 +75,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Corrected `ipset` command
+
+## [0.6.2] - Sun Mar 10 12:43:37 PDT 2024
+
+### Changed
+
+- Merged with product version
+
+### Fixed
+
+- Corrected `ipset` command (again)
+- Corrected SQL error of NULL insertion
