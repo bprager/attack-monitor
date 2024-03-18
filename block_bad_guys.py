@@ -60,13 +60,11 @@ def main():
         logging.info("added %d IPs to blacklist", added_ips)
         try:
             # save the blacklist
-            subprocess.run(
-                ["ipset", "save", "blacklist", "-f", "/etc/ipset.conf"], check=True
-            )
+            command = "ipset save blacklist -f/etc/ipset.conf"
+            subprocess.run(command, shell=True, check=True)
             # reload the blacklist
-            subprocess.run(
-                ["ipset", "restore", "blacklist", "-f", "/etc/ipset.conf"], check=True
-            )
+            command = "ipset -exist restore < /etc/ipset.conf"
+            subprocess.run(command, shell=True, check=True)
         except subprocess.CalledProcessError as e:
             logging.warning("can't persist blacklist, due to %s", e)
     else:

@@ -86,3 +86,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Corrected `ipset` command (again)
 - Corrected SQL error of NULL insertion
+
+
+## [0.6.3] - Mon Mar 18 16:37:14 PDT 2024
+
+### Fixed
+
+- Corrected and simplified `ipset` command
+
