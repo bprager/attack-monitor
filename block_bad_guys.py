@@ -57,10 +57,10 @@ def main():
                     logging.warning("can't add %s to blacklist, due to %s", row[0], e)
 
     if added_ips > 0:
-        logging.info("added %d IPs to blacklist", added_ips)
+        logging.info("added %d IP(s) to blacklist", added_ips)
         try:
             # save the blacklist
-            command = "ipset save blacklist -f/etc/ipset.conf"
+            command = "ipset save blacklist -f /etc/ipset.conf"
             subprocess.run(command, shell=True, check=True)
             # reload the blacklist
             command = "ipset -exist restore < /etc/ipset.conf"
