@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect invalid login attempts from log files
+After=multi-user.target
+Conflicts=getty@tty1.service
+[Service]
+Type=simple
+Restart=always
+ExecStart=/home/bernd/bin/bin-venv-2023-05-03/bin/python /home/bernd/bin/collect_attack.py
+StandardInput=tty-force
+[Install]
+WantedBy=multi-user.target

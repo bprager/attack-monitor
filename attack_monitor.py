@@ -15,7 +15,7 @@ from math import ceil
 
 import geoip2.database
 
-DATABASE = "./attack.db"
+DATABASE = "/home/bernd/attack.db"
 GEO_DB = "/usr/share/GeoIP/GeoLite2-City.mmdb"
 REFRESH = 5000
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
