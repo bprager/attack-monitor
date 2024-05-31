@@ -4,7 +4,7 @@ This script checks the attack database for actors who tried more than 1,000 time
 and add them to the ip blacklist
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Bernd Prager"
 
 import logging
@@ -34,12 +34,18 @@ def main():
         logging.error("insufficient permissions")
         sys.exit(1)
     # get already black listed IPs
-    out = subprocess.run(
-        ["ipset", "list", "blacklist"], capture_output=True, text=True, check=False
-    )
-    blacklist = out.stdout.strip().split("\n")[8:]
+    blacklist: list = []
+    try:
+        out = subprocess.run(
+            ["ipset", "list", "blacklist"], capture_output=True, text=True, check=True
+        )
+        blacklist = out.stdout.strip().split("\n")[8:]
+    except subprocess.CalledProcessError:
+        out = subprocess.run(
+                ["ipset", "create", "blacklist", "hash:ip"], capture_output=True, text=True, check=True
+        )
     logging.debug(blacklist)
-    added_ips = 0
+    added_ips: int = 0
     # get database records
     con = sqlite3.connect(f"file:{DB_FILE}?mode=ro")
     with con:
